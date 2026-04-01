@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>wumx — AI 코딩 에이전트를 위한 Windows 터미널</title>
+<meta name="description" content="Claude Code, Codex, Gemini CLI를 동시에 관리하는 Windows 터미널 멀티플렉서. 워크스페이스, 에이전트 알림, 세션 복원.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&display=swap');
+  :root {
+    --bg: #1a1b26; --bg-dark: #16161e; --bg-light: #24283b;
+    --text: #c0caf5; --muted: #565f89;
+    --blue: #7aa2f7; --cyan: #7dcfff; --green: #9ece6a;
+    --yellow: #e0af68; --red: #f7768e; --magenta: #bb9af7;
+    --orange: #ff9e64;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  code, .mono { font-family: 'JetBrains Mono', monospace; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    padding: 40px 24px; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -40%; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(122,162,247,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(122,162,247,0.1); border: 1px solid rgba(122,162,247,0.2);
+    padding: 6px 14px; border-radius: 999px; font-size: 13px; color: var(--blue);
+    margin-bottom: 24px;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .hero h1 { font-size: clamp(36px, 6vw, 60px); font-weight: 800; line-height: 1.1; margin-bottom: 16px; letter-spacing: -0.02em; }
+  .hero h1 .accent { color: var(--blue); }
+  .hero .sub { font-size: clamp(15px, 2.2vw, 18px); color: var(--muted); max-width: 560px; line-height: 1.7; margin-bottom: 36px; }
+
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; border-radius: 10px; font-size: 15px; font-weight: 600;
+    border: none; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--blue); color: var(--bg-dark); }
+  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--muted); }
+  .btn-outline:hover { border-color: var(--text); background: rgba(255,255,255,0.03); }
+  .btn svg { width: 18px; height: 18px; }
+
+  /* Terminal mockup */
+  .terminal-mock {
+    max-width: 700px; width: 100%; margin: 40px auto 0;
+    background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .terminal-bar {
+    background: rgba(255,255,255,0.04); padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .terminal-bar .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .terminal-bar .d-r { background: var(--red); }
+  .terminal-bar .d-y { background: var(--yellow); }
+  .terminal-bar .d-g { background: var(--green); }
+  .terminal-bar span { font-size: 12px; color: var(--muted); margin-left: 8px; }
+  .terminal-body {
+    padding: 16px 20px; font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; line-height: 1.8;
+  }
+  .t-prompt { color: var(--green); }
+  .t-cmd { color: var(--text); }
+  .t-output { color: var(--muted); }
+  .t-highlight { color: var(--cyan); }
+  .t-warn { color: var(--yellow); }
+
+  /* Features */
+  .features { max-width: 1000px; margin: 0 auto; padding: 80px 24px; }
+  .features h2 { font-size: 30px; font-weight: 700; text-align: center; margin-bottom: 48px; }
+  .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .feat-card {
+    background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px; padding: 24px; transition: border-color 0.2s;
+  }
+  .feat-card:hover { border-color: rgba(122,162,247,0.3); }
+  .feat-icon { font-size: 24px; margin-bottom: 10px; }
+  .feat-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .feat-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* Compare */
+  .compare { max-width: 700px; margin: 0 auto; padding: 80px 24px; }
+  .compare h2 { font-size: 30px; font-weight: 700; text-align: center; margin-bottom: 32px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: var(--bg-dark); padding: 10px 14px; text-align: left; font-weight: 600; border: 1px solid rgba(255,255,255,0.06); }
+  td { padding: 10px 14px; border: 1px solid rgba(255,255,255,0.06); }
+  tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+  /* Install */
+  .install { max-width: 700px; margin: 0 auto; padding: 80px 24px; }
+  .install h2 { font-size: 30px; font-weight: 700; text-align: center; margin-bottom: 12px; }
+  .install .sub { text-align: center; color: var(--muted); margin-bottom: 32px; }
+  .install-box {
+    background: var(--bg-dark); border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px; padding: 28px;
+  }
+  .steps { list-style: none; counter-reset: s; }
+  .steps li {
+    counter-increment: s; padding: 10px 0; font-size: 15px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .steps li::before {
+    content: counter(s); display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(122,162,247,0.15); color: var(--blue);
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  code {
+    background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 4px;
+    font-size: 13px;
+  }
+
+  /* Shortcuts */
+  .shortcuts { max-width: 600px; margin: 0 auto; padding: 60px 24px; }
+  .shortcuts h2 { font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 24px; }
+  .key-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .key-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 14px; background: var(--bg-dark); border-radius: 8px;
+    font-size: 13px;
+  }
+  .key-row kbd {
+    background: rgba(255,255,255,0.08); padding: 3px 8px; border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* Footer */
+  footer {
+    text-align: center; padding: 40px 24px; border-top: 1px solid rgba(255,255,255,0.06);
+    color: var(--muted); font-size: 13px;
+  }
+
+  @media (max-width: 640px) {
+    .key-grid { grid-template-columns: 1fr; }
+    .cta { flex-direction: column; align-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="badge"><span class="dot"></span> v1.0.0 Released</div>
+  <h1><span class="accent">wumx</span><br>AI 에이전트를 위한<br>Windows 터미널</h1>
+  <p class="sub">Claude Code, Codex, Gemini CLI를 동시에 관리하세요.<br>워크스페이스, 에이전트 알림, 세션 복원, 내장 브라우저까지.</p>
+  <div class="cta">
+    <a href="https://github.com/seokheounjo/wumx/releases/latest/download/wumx-win-x64.zip" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Windows 다운로드 (110MB)
+    </a>
+    <a href="https://github.com/seokheounjo/wumx" class="btn btn-outline" target="_blank">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+      GitHub
+    </a>
+  </div>
+
+  <div class="terminal-mock">
+    <div class="terminal-bar">
+      <div class="dot d-r"></div><div class="dot d-y"></div><div class="dot d-g"></div>
+      <span>wumx &mdash; PowerShell</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-prompt">workspace-1</span> <span class="t-output">~/my-project</span> <span class="t-highlight">main</span></div>
+      <div><span class="t-prompt">$</span> <span class="t-cmd">claude "이 프로젝트의 버그를 찾아줘"</span></div>
+      <div class="t-output">Analyzing codebase... Found 3 issues.</div>
+      <div style="height:6px"></div>
+      <div><span class="t-warn">&#x1F514; 에이전트가 입력을 기다리고 있습니다</span></div>
+      <div style="height:6px"></div>
+      <div><span class="t-prompt">workspace-2</span> <span class="t-output">~/api-server</span> <span class="t-highlight">feat/auth</span></div>
+      <div><span class="t-prompt">$</span> <span class="t-cmd">codex "인증 미들웨어 추가해줘"</span></div>
+      <div class="t-output">Creating auth middleware...</div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <h2>주요 기능</h2>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">&#x1F4C2;</div>
+      <h3>워크스페이스 관리</h3>
+      <p>세로 탭 사이드바에서 여러 프로젝트를 한눈에 관리. Git 브랜치, CWD, PR 번호, 리스닝 포트 자동 표시.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">&#x1F514;</div>
+      <h3>에이전트 알림</h3>
+      <p>OSC 9/99/777 시퀀스 감지. 에이전트가 입력을 기다리면 알림 링으로 즉시 표시.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">&#x1F310;</div>
+      <h3>내장 브라우저</h3>
+      <p>터미널 옆에 WebView 브라우저 패널. JavaScript 실행 콘솔 내장.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">&#x25A7;</div>
+      <h3>패널 분할</h3>
+      <p>가로/세로 분할, 드래그 리사이즈. 각 패널에 독립적인 이름 지정.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">&#x1F504;</div>
+      <h3>세션 복원</h3>
+      <p>껐다 켜도 워크스페이스, 패널 레이아웃, 터미널 화면 내용 그대로 복원.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">&#x1F4E1;</div>
+      <h3>CLI 제어</h3>
+      <p>Named Pipe API로 외부에서 실시간 제어. wumx notify, wumx list-workspaces 등.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">&#x1F517;</div>
+      <h3>컨텍스트 공유</h3>
+      <p>워크스페이스/패널 간 키-값 데이터 공유. TTL 지원.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">&#x26A1;</div>
+      <h3>GPU 가속</h3>
+      <p>xterm.js WebGL 렌더러로 62fps 렌더링. 대량 출력에도 끊김 없음.</p>
+    </div>
+  </div>
+</section>
+
+<section class="compare">
+  <h2>cmux vs wumx</h2>
+  <table>
+    <tr><th>항목</th><th>cmux (macOS)</th><th>wumx (Windows)</th></tr>
+    <tr><td>플랫폼</td><td>macOS 14+</td><td>Windows 10/11</td></tr>
+    <tr><td>렌더링</td><td>libghostty (GPU)</td><td>xterm.js WebGL</td></tr>
+    <tr><td>네이티브</td><td>Swift + AppKit</td><td>Electron + React</td></tr>
+    <tr><td>가격</td><td>무료</td><td style="color:var(--green);font-weight:600">무료</td></tr>
+    <tr><td>세션 복원</td><td>레이아웃만</td><td style="color:var(--green)">레이아웃 + 화면 내용</td></tr>
+    <tr><td>CLI</td><td>Unix Socket</td><td>Named Pipe</td></tr>
+    <tr><td>브라우저</td><td>WebKit</td><td>Chromium WebView</td></tr>
+    <tr><td>설치</td><td>Homebrew</td><td style="color:var(--green)">ZIP 압축 해제</td></tr>
+  </table>
+</section>
+
+<section class="install" id="install">
+  <h2>설치 방법</h2>
+  <p class="sub">30초면 됩니다. 추가 설치 없음.</p>
+  <div class="install-box">
+    <ol class="steps">
+      <li>위의 <strong>"Windows 다운로드"</strong> 버튼 클릭 (110MB)</li>
+      <li>원하는 폴더에 압축 해제 (예: <code>C:\wumx\</code>)</li>
+      <li><code>wumx.exe</code> 더블클릭</li>
+      <li>왼쪽 사이드바에서 워크스페이스 관리, 터미널 사용 시작</li>
+    </ol>
+  </div>
+</section>
+
+<section class="shortcuts">
+  <h2>키보드 단축키</h2>
+  <div class="key-grid">
+    <div class="key-row"><span>새 워크스페이스</span><kbd>Ctrl+N</kbd></div>
+    <div class="key-row"><span>워크스페이스 전환</span><kbd>Ctrl+1~9</kbd></div>
+    <div class="key-row"><span>세션 저장</span><kbd>Ctrl+S</kbd></div>
+    <div class="key-row"><span>패널 닫기</span><kbd>Ctrl+W</kbd></div>
+    <div class="key-row"><span>가로 분할</span><kbd>Ctrl+Shift+H</kbd></div>
+    <div class="key-row"><span>세로 분할</span><kbd>Ctrl+Shift+V</kbd></div>
+    <div class="key-row"><span>브라우저 토글</span><kbd>Ctrl+Shift+B</kbd></div>
+    <div class="key-row"><span>알림 패널</span><kbd>Ctrl+Shift+I</kbd></div>
+    <div class="key-row"><span>설정</span><kbd>Ctrl+,</kbd></div>
+  </div>
+</section>
+
+<footer>
+  <p>wumx v1.0.0 &mdash; AI 코딩 에이전트를 위한 Windows 터미널 멀티플렉서</p>
+  <p style="margin-top:8px">
+    <a href="https://github.com/seokheounjo/wumx" target="_blank">GitHub</a>
+    &middot;
+    <a href="https://github.com/seokheounjo/wumx/releases" target="_blank">Releases</a>
+    &middot;
+    MIT License
+  </p>
+</footer>
+
+</body>
+</html>
