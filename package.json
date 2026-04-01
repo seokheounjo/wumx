@@ -1,0 +1,82 @@
+{
+  "name": "wumx",
+  "version": "1.0.0",
+  "description": "AI 코딩 에이전트를 위한 Windows 터미널 멀티플렉서",
+  "main": "dist/main/main.js",
+  "scripts": {
+    "dev": "concurrently \"webpack --config webpack.main.config.js --watch\" \"webpack serve --config webpack.renderer.config.js\"",
+    "build:main": "webpack --config webpack.main.config.js",
+    "build:preload": "node -e \"require('fs').copyFileSync('src/main/preload.js','dist/main/preload.js')\"",
+    "build:renderer": "webpack --config webpack.renderer.config.js --mode production",
+    "build:cli": "webpack --config webpack.cli.config.js",
+    "build": "npm run build:main && npm run build:preload && npm run build:renderer && npm run build:cli",
+    "start": "electron dist/main/main.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "author": "wumx",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@types/uuid": "^10.0.0",
+    "concurrently": "^8.2.2",
+    "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^6.9.1",
+    "electron": "^28.1.4",
+    "electron-builder": "^24.9.1",
+    "html-webpack-plugin": "^5.6.0",
+    "style-loader": "^3.3.4",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.2"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-search": "^0.15.0",
+    "@xterm/addon-unicode11": "^0.8.0",
+    "@xterm/addon-web-links": "^0.11.0",
+    "@xterm/addon-webgl": "^0.18.0",
+    "@xterm/xterm": "^5.5.0",
+    "electron-store": "^8.1.0",
+    "node-pty": "^1.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "simple-git": "^3.22.0",
+    "uuid": "^9.0.0"
+  },
+  "build": {
+    "appId": "com.wumx.terminal",
+    "productName": "wumx",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "dir",
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": false,
+      "sign": false
+    },
+    "forceCodeSigning": false,
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "assets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/node-pty/build/Release/",
+        "to": "node-pty",
+        "filter": [
+          "*.node",
+          "*.dll",
+          "*.exe"
+        ]
+      }
+    ]
+  }
+}
