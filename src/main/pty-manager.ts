@@ -21,8 +21,18 @@ export class PTYManager {
   create(paneId: string, shell: string, cwd: string, cols: number = 80, rows: number = 24): pty.IPty {
     this.dispose(paneId);
 
+    // CWD 유효성 검사 - 존재하지 않으면 홈 디렉토리로 폴백
+    let safeCwd = cwd;
+    try {
+      const fs = require('fs');
+      if (!fs.existsSync(safeCwd)) {
+        safeCwd = os.homedir();
+      }
+    } catch {
+      safeCwd = os.homedir();
+    }
+
     const env = { ...process.env } as Record<string, string>;
-    // wumx 전용 환경변수 설정
     env.WUMX = '1';
     env.WUMX_PANE = paneId;
     env.TERM_PROGRAM = 'wumx';
@@ -31,7 +41,7 @@ export class PTYManager {
       name: 'xterm-256color',
       cols,
       rows,
-      cwd,
+      cwd: safeCwd,
       env,
       useConpty: os.platform() === 'win32',
     });

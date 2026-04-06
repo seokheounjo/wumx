@@ -121,6 +121,7 @@ export const IPC_CHANNELS = {
   PANE_CLOSE: 'pane:close',
   PANE_FOCUS: 'pane:focus',
   PANE_RESIZE: 'pane:resize',
+  PANE_RENAME: 'pane:rename',
   PANE_INPUT: 'pane:input',
   PANE_OUTPUT: 'pane:output',
 

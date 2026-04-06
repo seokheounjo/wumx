@@ -257,10 +257,13 @@ export class WorkspaceManager {
     }
   }
 
-  renamPane(paneId: string, name: string): void {
+  renamePane(paneId: string, name: string): boolean {
+    const trimmed = name.trim().slice(0, 100);
+    if (!trimmed) return false;
     for (const ws of this.workspaces.values()) {
-      this.updateFieldInLayout(ws.panes, paneId, 'name', name);
+      this.updateFieldInLayout(ws.panes, paneId, 'name', trimmed);
     }
+    return true;
   }
 
   private updateFieldInLayout(layout: PaneLayout, paneId: string, field: string, value: string): void {

@@ -159,7 +159,7 @@ const PaneView: React.FC<LayoutProps & { pane: PaneInfo }> = ({
 
   const handleRename = async () => {
     if (editName.trim()) {
-      await api.invoke('pane:rename' as any, { paneId: pane.id, name: editName.trim() });
+      await api.invoke(IPC_CHANNELS.PANE_RENAME, { paneId: pane.id, name: editName.trim() });
       onUpdate();
     }
     setEditing(false);

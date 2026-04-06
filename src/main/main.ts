@@ -169,9 +169,8 @@ function registerIpcHandlers(): void {
     return true;
   });
 
-  ipcMain.handle('pane:rename', async (_, { paneId, name }) => {
-    workspaceManager.renamPane(paneId, name);
-    return true;
+  ipcMain.handle(IPC_CHANNELS.PANE_RENAME, async (_, { paneId, name }) => {
+    return workspaceManager.renamePane(paneId, name);
   });
 
   ipcMain.handle(IPC_CHANNELS.PANE_SPLIT, async (_, { workspaceId, paneId, direction }) => {
@@ -388,6 +387,12 @@ function setupPortScanning(): void {
 
 function setupAutoSave(): void {
   if (config.sessionAutoSave) {
+    // 시작 5초 후 첫 저장
+    setTimeout(async () => {
+      try {
+        await sessionManager.saveSession(workspaceManager.getAllWorkspaces(), workspaceManager.getActiveWorkspaceId());
+      } catch {}
+    }, 5000);
     setInterval(async () => {
       try {
         await sessionManager.saveSession(
