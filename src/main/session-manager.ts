@@ -65,6 +65,7 @@ export class SessionManager {
           shell: layout.pane.shell,
           scrollback: layout.pane.scrollback.slice(-50000), // 마지막 50K 문자만 저장
           env: layout.pane.env,
+          name: layout.pane.name,
         },
       };
     }

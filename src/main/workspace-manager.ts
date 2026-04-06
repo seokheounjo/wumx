@@ -407,7 +407,7 @@ export class WorkspaceManager {
         type: 'single',
         pane: {
           id: session.pane.id,
-          name: (session.pane as any).name || `Terminal ${++this.paneCounter}`,
+          name: session.pane.name || `Terminal ${++this.paneCounter}`,
           cwd: session.pane.cwd,
           shell: session.pane.shell || this.config.shell,
           title: '',

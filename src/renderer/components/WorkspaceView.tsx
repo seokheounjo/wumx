@@ -63,6 +63,7 @@ export const WorkspaceView: React.FC<WorkspaceViewProps> = ({
           onPaneFocus={handlePaneFocus}
           onSplit={handleSplit}
           onClose={handleClosePane}
+          onUpdate={onUpdate}
           singlePane={currentPaneIds.length <= 1}
           fontSize={fontSize}
           visible={visible}
@@ -90,6 +91,7 @@ interface LayoutProps {
   onPaneFocus: (id: string) => void;
   onSplit: (id: string, dir: 'horizontal' | 'vertical') => void;
   onClose: (id: string) => void;
+  onUpdate: () => void;
   singlePane: boolean;
   fontSize?: number;
   visible?: boolean;
@@ -144,7 +146,7 @@ const SplitRenderer: React.FC<LayoutProps & { layout: PaneLayout & { type: 'spli
 // ===== 패널 뷰 (헤더 + 터미널 직접 렌더링) =====
 
 const PaneView: React.FC<LayoutProps & { pane: PaneInfo }> = ({
-  pane, activePaneId, onPaneFocus, onSplit, onClose, singlePane, fontSize, visible,
+  pane, activePaneId, onPaneFocus, onSplit, onClose, onUpdate, singlePane, fontSize, visible,
 }) => {
   const focused = pane.id === activePaneId;
   const [editing, setEditing] = useState(false);
@@ -155,9 +157,10 @@ const PaneView: React.FC<LayoutProps & { pane: PaneInfo }> = ({
     return parts.length > 3 ? `.../${parts.slice(-2).join('/')}` : p;
   };
 
-  const handleRename = () => {
+  const handleRename = async () => {
     if (editName.trim()) {
-      api.invoke('pane:rename' as any, { paneId: pane.id, name: editName.trim() });
+      await api.invoke('pane:rename' as any, { paneId: pane.id, name: editName.trim() });
+      onUpdate();
     }
     setEditing(false);
   };

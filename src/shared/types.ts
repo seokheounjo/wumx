@@ -94,6 +94,7 @@ export interface PaneSession {
   shell: string;
   scrollback: string;
   env: Record<string, string>;
+  name?: string;
 }
 
 export interface WindowBounds {
